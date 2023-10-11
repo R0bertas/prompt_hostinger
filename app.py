@@ -3,6 +3,7 @@ import openai
 import os
 # to keep the order of the keys in the dictionary as in response from task 
 from collections import OrderedDict
+# from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
@@ -69,12 +70,12 @@ def generate_section_content():
     generated_content =  OrderedDict()
 
     
-    print("ROBERTAS")
     for section, section_data  in sections.items():
         # the reason i went with if statements is because we may want to have different prompts for each section
+        #  more flexibility to modify sections if content about will have something what others may not need 
+        #  we could generalize these 3 functions into one but i think it is better to have them separate
         if section == "about":
             about_resp = generate_content_about(company_description, section_data, prompt_engine)
-            
             generated_content["about"] = about_resp
         if section == "refunds":
             refunds_resp = generate_content_refunds(company_description, section_data, prompt_engine)
@@ -153,17 +154,17 @@ def generate_content_hero(company_description, data, response_from_openai):
     
 
 def prompt_engine(system_prompt,user_prompt):
-    # response = openai.ChatCompletion.create(
-    #             model="gpt-3.5-turbo",
-    #             messages=[
-    #                 {"role": "system", "content": system_prompt},
-    #                 {"role": "user", "content": user_prompt},
-    #             ],
-    #             temperature=0.4, 
-    #             max_tokens=50,
-    #         )
+    response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.4, 
+                max_tokens=50,
+            )
     
-    # return response.choices[0].message['content']
+    return response.choices[0].message['content']
     return "test"
 
 if __name__ == "__main__":
