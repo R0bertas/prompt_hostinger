@@ -1,0 +1,8 @@
+Flask
+gunicorn
+spacy
+transformers
+python-dotenv
+openai
+pydantic
+chardet

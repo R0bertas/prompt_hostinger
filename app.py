@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import openai
 import os
+# to keep the order of the keys in the dictionary as in response from task 
+from collections import OrderedDict
 
 app = Flask(__name__)
 
@@ -64,107 +66,105 @@ def generate_section_content():
     company_description = data['description']
 
     # Generate content for each section
-    generated_content = {}
+    generated_content =  OrderedDict()
 
     
     print("ROBERTAS")
     for section, section_data  in sections.items():
-        
+        # the reason i went with if statements is because we may want to have different prompts for each section
         if section == "about":
-            # response = promt_engine("Generate content for the following sections:\n", "About")
-            generate_content_about(company_description, section_data, promt_engine)
-        
-    # Define prompt for OpenAI API
-    # prompt = "Generate content for the following sections:\n"
-    # for section, section_data in sections.items():
-    #     if 'title' in section_data:
-    #         prompt += f"**{section_data['title']}**\n"
-    #     if 'subtitle' in section_data:
-    #         prompt += f"*{section_data['subtitle']}*\n"
-    #     if 'description' in section_data:
-    #         for _ in range(section_data['description']):
-    #             prompt += "Generate a paragraph related to this section.\n"
-    #     prompt += "\n"
+            about_resp = generate_content_about(company_description, section_data, prompt_engine)
+            
+            generated_content["about"] = about_resp
+        if section == "refunds":
+            refunds_resp = generate_content_refunds(company_description, section_data, prompt_engine)
+            generated_content["refunds" ] = refunds_resp
+        if section == "hero":
+            hero_resp = generate_content_hero(company_description, section_data, prompt_engine)
+            generated_content["hero"] = hero_resp
+                                      
 
-    # # Call OpenAI API to generate text
-    # response = openai.ChatCompletion.create(
-    #             model="gpt-3.5-turbo",
-    #             messages=[
-    #                 {"role": "system", "content": "You must provide answer in the same language as the question."},
-    #                 {"role": "user", "content": prompt},
-    #             ],
-    #             temperature=0.5, 
-    #             max_tokens=20,
-    #         )
-
- 
-
-    # generated_text = response.choices[0].message['content']
-
-    # # Organize the generated content
-    # for section in sections:
-    #     generated_content[section] = {'description': generated_text}
-
-    # return jsonify(generated_content), 200
+  
     return jsonify(generated_content), 200
 
 
 def generate_content_about(company_description, data, response_from_openai):
     
     # we will build structure for about section
-    about_section = {}
-
-    # getting number of titles, subtitles and descriptions
-    #  if it is not provided set it to 0 and if it is 1 it will be string otherwise list 
-    number_of_titles =data.get("title", 0)
-    number_of_subtitles =data.get("subtitle", 0)
-    number_of_descriptions =data.get("description", 0)
-
-    if number_of_titles == 1:
-        about_section.update({"title": response_from_openai("Generate title based on user description for the about section:\n", f"Here is a company description {company_description} write a title for it")})
-    if number_of_titles > 1:
-        number_of_responses = []
-        for _ in range(number_of_titles+1):
-            number_of_responses.append(response_from_openai("Generate title based on user description for the about section:\n", f"Here is a company description {company_description} write a title for it"))
-        about_section.update({"title": number_of_responses} )   
-        
-    if number_of_subtitles == 1:
-        about_section.update({"subtitle": response_from_openai("Generate subtitle based on user description for the about section:\n", f"Here is a company description {company_description} write a subtitle for it")})
-    if number_of_subtitles > 1:
-        number_of_responses = []
-        for _ in range(number_of_titles+1):
-            number_of_responses.append(response_from_openai("Generate subtitle based on user description for the about section:\n", f"Here is a company description {company_description} write a subtitle for it"))
-        about_section.update({"subtitle": number_of_responses}   )
+    about_section = OrderedDict()
     
-    if number_of_descriptions == 1:
-        about_section.update({"description": response_from_openai("Generate subtitle based on user description for the about section:\n", f"Here is a company description {company_description} write a description for it")})
-    if number_of_descriptions > 1:
-        number_of_responses = []
-        for x in range(number_of_titles+1):
-            number_of_responses.append(response_from_openai("Generate subtitle based on user description for the about section:\n", f"Here is a company description {company_description} write a description for it"))
-        about_section.update({"description": number_of_responses} )    
+    for key in ["title", "subtitle", "description"]:
+        system_prompt = f"Generate {key} based on user description for the about section"
+        user_prompt = f"Here is a company description {company_description} write a {key} for it"
         
-    print("EEEEEEEEE", about_section)
+        num_items = data.get(key, 0)
+        if num_items == 1:
+            about_section[key] = response_from_openai(system_prompt, user_prompt)
+        elif num_items > 1:
+            number_of_responses = []
+            for _ in range(num_items):
+                number_of_responses.append(response_from_openai(system_prompt, user_prompt))
+            about_section[key] = number_of_responses
+
     return about_section
 
-def generate_content_refunds():
-    pass
+def generate_content_refunds(company_description, data, response_from_openai):
+        
+    refunds_section = OrderedDict()
 
-def generate_content_hero():
-    pass
-
-def promt_engine(system_prompt,user_prompt):
-    response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0.5, 
-                max_tokens=20,
-            )
+    for key in ["title", "subtitle", "description"]:
+        
+        system_prompt = f"Generate {key} based on user description for the refunds section"
+        user_prompt = f"Here is a company description {company_description} write a {key} for it, mention refunds" 
+        
+        num_items = data.get(key, 0)
+        if num_items == 1:
+            refunds_section[key] = response_from_openai(system_prompt, user_prompt)
+        elif num_items > 1:
+            number_of_responses = []
+            for _ in range(num_items):
+                number_of_responses.append(response_from_openai(system_prompt, user_prompt))
+            refunds_section[key] = number_of_responses
     
-    return response.choices[0].message['content']
+    
+    return refunds_section
+# code same as generate_content_about
+def generate_content_hero(company_description, data, response_from_openai):
+    
+    hero_section = OrderedDict()
+    
+    for key in ["title", "subtitle", "description"]:
+    
+        system_prompt = f"Generate {key} based on user description for the hero section"
+        user_prompt = f"Here is a company description {company_description} write a {key} for it, hero section means somethin unique "
+        
+        num_items = data.get(key, 0)
+        if num_items == 1:
+            hero_section[key] = response_from_openai(system_prompt, user_prompt)
+        elif num_items > 1:
+            number_of_responses = []
+            for _ in range(num_items):
+                number_of_responses.append(response_from_openai(system_prompt, user_prompt))
+            hero_section[key] = number_of_responses
+
+    
+        return hero_section
+    
+    
+
+def prompt_engine(system_prompt,user_prompt):
+    # response = openai.ChatCompletion.create(
+    #             model="gpt-3.5-turbo",
+    #             messages=[
+    #                 {"role": "system", "content": system_prompt},
+    #                 {"role": "user", "content": user_prompt},
+    #             ],
+    #             temperature=0.4, 
+    #             max_tokens=50,
+    #         )
+    
+    # return response.choices[0].message['content']
+    return "test"
 
 if __name__ == "__main__":
     app.run(debug=True)
