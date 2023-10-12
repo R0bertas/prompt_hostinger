@@ -4,7 +4,6 @@ import os
 # to keep the order of the keys in the dictionary as in response from task 
 from collections import OrderedDict
 # from concurrent.futures import ThreadPoolExecutor
-import langdetect  # You'll need to install the langdetect package
 
 app = Flask(__name__)
 
@@ -28,16 +27,15 @@ def rephrase_text():
 
         rephrased_variants = []
     
-        # Detect the language of the input text
-        input_language = langdetect.detect(text_to_rephrase)
-        prompt=f" Follow the instructions and rules provided in the System role,Rephrase the following text in {input_language} and keep it in the same language: {text_to_rephrase}"
+        
+        prompt=f" Follow the instructions and rules provided in the System role,Rephrase the following text - {text_to_rephrase}, detect its language and keep answer in this language."
 
         for _ in range(number_of_variants):
 
             response = openai.ChatCompletion.create(
                 model="gpt-4-0613",
                 messages=[
-                    {"role": "system", "content": f"You must provide answer in this language : {input_language}, and the text should be rephrased."},
+                    {"role": "system", "content": f"You must provide answer in detected language and the text should be rephrased."},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.8, 
@@ -62,7 +60,6 @@ def generate_section_content():
     # Parse the request data
     data = request.get_json()
 
-    # Check if 'sections' field is present in the request
     if 'sections' not in data or "description" not in data:
         return jsonify({'message': 'Missing "sections" or "description" field in the request'}), 400
 
@@ -168,7 +165,6 @@ def prompt_engine(system_prompt,user_prompt):
             )
     
     return response.choices[0].message['content']
-    return "test"
 
 if __name__ == "__main__":
     app.run(debug=True)

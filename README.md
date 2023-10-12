@@ -34,7 +34,7 @@ modify docker file to use different port etc 5001
 Future update suggestions:
 
 0. Use oauth for authentication
-1. Add diferent language detect model
+1. Add specific language detect model 
 2. Add more test cases
 3. Add pydantic for validation
 4. Add limitation for number_of_variants
