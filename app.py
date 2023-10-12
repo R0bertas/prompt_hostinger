@@ -4,6 +4,7 @@ import os
 # to keep the order of the keys in the dictionary as in response from task 
 from collections import OrderedDict
 # from concurrent.futures import ThreadPoolExecutor
+import langdetect  # You'll need to install the langdetect package
 
 app = Flask(__name__)
 
@@ -26,18 +27,20 @@ def rephrase_text():
         number_of_variants = data.get("number_of_variants", 2)
 
         rephrased_variants = []
-        
-        prompt=f"Rephrase the following text and keep in the same language it was provided: {text_to_rephrase}"
+    
+        # Detect the language of the input text
+        input_language = langdetect.detect(text_to_rephrase)
+        prompt=f" Follow the instructions and rules provided in the System role,Rephrase the following text in {input_language} and keep it in the same language: {text_to_rephrase}"
 
         for _ in range(number_of_variants):
 
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4-0613",
                 messages=[
-                    {"role": "system", "content": "You must provide answer in the same language as the question."},
+                    {"role": "system", "content": f"You must provide answer in this language : {input_language}, and the text should be rephrased."},
                     {"role": "user", "content": prompt},
                 ],
-                temperature=0.5, 
+                temperature=0.8, 
                 max_tokens=20,
             )
             rephrased_variants.append(response.choices[0].message['content'])
